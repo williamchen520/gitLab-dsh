@@ -119,7 +119,7 @@
 
   "api": {
     "prefix": "",
-    "note": "validate_arch.py 不适用于本组件：它硬编码 Flask 的 api_server.app，而本组件是 FastAPI。校验由 tests/ 承担。",
+    "note": "validate_arch.py 支持 Flask 与 FastAPI：python scripts/validate_arch.py --arch ARCHITECTURE.json --app api:app --root <repo> --ignore / 可直接校验本组件（/ 为网页首页，不属契约）。",
     "endpoints": [
       { "rule": "/health", "endpoint": "system.health", "methods": ["GET"], "status": "implemented" },
       { "rule": "/experiments/{experiment_id}/snapshots", "endpoint": "snapshots.list", "methods": ["GET"], "status": "implemented" },

@@ -1,0 +1,143 @@
+{
+  "meta": {
+    "name": "dsh-snapshot",
+    "title": "实验快照",
+    "version": "0.3.0",
+    "status": "proposed",
+    "source_repo": "https://github.com/williamchen520/dsh-snapshot",
+    "description": "以实验为单元、整树不可变快照为核心的数据版本系统；内核与传输层分离，MCP 与 HTTP 共用同一内核。",
+    "supersedes": "docs/ARCHITECTURE.draft.json"
+  },
+
+  "decisions": {
+    "D-1": {
+      "choice": "B",
+      "summary": "派生子实验：derived_from 指针落在实验实体上，不设 branch 表"
+    },
+    "D-2": {
+      "choice": "A",
+      "summary": "全量内容寻址，未变对象靠哈希复用；引用模式阈值默认关闭"
+    },
+    "D-6": {
+      "choice": "A",
+      "summary": "整实验快照：一次提交固化实验下全部内容"
+    }
+  },
+
+  "invariants": [
+    "快照创建后，内容、父指针、树哈希均不可修改",
+    "回滚是追加新快照，历史永不改写",
+    "内核不得导入任何传输协议（mcp / fastapi / flask / starlette / uvicorn）",
+    "条目顺序为码点序，由内核统一，不交给数据库排序",
+    "软删除只改可见性，行与内容保留",
+    "戳一旦写入不重算，除非显式要求"
+  ],
+
+  "layers": {
+    "kernel": {
+      "path": "services/snapshot",
+      "transport_free": true,
+      "modules": [
+        "models.py — Snapshot / SnapshotItem / Stamp / 树哈希 / 戳摘要",
+        "diff.py — 纯函数树对比",
+        "ports.py — SnapshotStorage 协议",
+        "service.py — SnapshotService 业务编排",
+        "adapters/ — sql_base / sqlite / postgres"
+      ]
+    },
+    "shells": [
+      {
+        "name": "mcp",
+        "path": "server.py",
+        "transport": "stdio",
+        "host": "DSH",
+        "tools": 10
+      },
+      {
+        "name": "http",
+        "path": "api.py",
+        "framework": "FastAPI",
+        "endpoints": 11,
+        "serves": "web/"
+      }
+    ]
+  },
+
+  "storage": {
+    "adapters": ["sqlite", "postgres"],
+    "metadata_tables": ["snapshots", "snapshot_items"],
+    "ordering": "seq（数据库自增），不使用 created_at",
+    "dedup": "blob_hash 内容寻址",
+    "migration": "init_schema 幂等，缺列自动 ALTER TABLE ADD COLUMN"
+  },
+
+  "models": {
+    "snapshot": {
+      "id": "string，唯一",
+      "experiment_id": "string",
+      "parent_id": "string | null，构成 DAG",
+      "tree_hash": "sha256(排序后的 path/blob_hash/size)",
+      "message": "string",
+      "author": "string",
+      "created_at": "ISO8601 UTC",
+      "action": "create | rollback",
+      "audit": { "source_ip": "string | null", "user_agent": "string | null" },
+      "stamp": { "kind": "local", "digest": "sha256", "stamped_at": "ISO8601" },
+      "deleted_at": "ISO8601 | null",
+      "deleted_by": "string | null"
+    },
+    "item": {
+      "path": "string",
+      "blob_hash": "string",
+      "size": "integer",
+      "mime": "string"
+    }
+  },
+
+  "mcp": {
+    "server_name": "snapshot",
+    "bundle": "@local/dsh-snapshot",
+    "tools": [
+      { "name": "create_snapshot", "effect": "write", "maps_to": "SnapshotService.create" },
+      { "name": "list_snapshots", "effect": "read", "maps_to": "SnapshotService.list" },
+      { "name": "get_snapshot", "effect": "read", "maps_to": "SnapshotService.get" },
+      { "name": "head_snapshot", "effect": "read", "maps_to": "SnapshotService.head" },
+      { "name": "diff_snapshots", "effect": "read", "maps_to": "SnapshotService.diff" },
+      { "name": "rollback_snapshot", "effect": "write", "maps_to": "SnapshotService.rollback" },
+      { "name": "stamp_snapshot", "effect": "write", "maps_to": "SnapshotService.stamp" },
+      { "name": "delete_snapshot", "effect": "write", "maps_to": "SnapshotService.delete" },
+      { "name": "undelete_snapshot", "effect": "write", "maps_to": "SnapshotService.undelete" },
+      { "name": "verify_snapshot", "effect": "read", "maps_to": "SnapshotService.verify" }
+    ]
+  },
+
+  "api": {
+    "prefix": "",
+    "note": "validate_arch.py 不适用于本组件：它硬编码 Flask 的 api_server.app，而本组件是 FastAPI。校验由 tests/ 承担。",
+    "endpoints": [
+      { "rule": "/health", "endpoint": "system.health", "methods": ["GET"], "status": "implemented" },
+      { "rule": "/experiments/{experiment_id}/snapshots", "endpoint": "snapshots.list", "methods": ["GET"], "status": "implemented" },
+      { "rule": "/experiments/{experiment_id}/snapshots", "endpoint": "snapshots.create", "methods": ["POST"], "status": "implemented" },
+      { "rule": "/experiments/{experiment_id}/head", "endpoint": "snapshots.head", "methods": ["GET"], "status": "implemented" },
+      { "rule": "/snapshots/{snapshot_id}", "endpoint": "snapshots.get", "methods": ["GET"], "status": "implemented" },
+      { "rule": "/snapshots/{left_id}/diff/{right_id}", "endpoint": "snapshots.diff", "methods": ["GET"], "status": "implemented" },
+      { "rule": "/experiments/{experiment_id}/rollback/{target_id}", "endpoint": "snapshots.rollback", "methods": ["POST"], "status": "implemented" },
+      { "rule": "/snapshots/{snapshot_id}/stamp", "endpoint": "snapshots.stamp", "methods": ["POST"], "status": "implemented" },
+      { "rule": "/snapshots/{snapshot_id}/verify", "endpoint": "snapshots.verify", "methods": ["GET"], "status": "implemented" },
+      { "rule": "/snapshots/{snapshot_id}", "endpoint": "snapshots.delete", "methods": ["DELETE"], "status": "implemented" },
+      { "rule": "/snapshots/{snapshot_id}/undelete", "endpoint": "snapshots.undelete", "methods": ["POST"], "status": "implemented" }
+    ]
+  },
+
+  "verification": {
+    "unit_and_integration": "tests/ — SQLite 全量 + FastAPI 端点",
+    "postgres": "scripts/run_pg_tests.py（嵌入式 pgserver，7 条场景）",
+    "end_to_end": "已装为 DSH 插件，10 个工具在真实 MCP 链路中跑通"
+  },
+
+  "known_gaps": [
+    "时间戳仅本地摘要，未接 RFC 3161 外部时间源",
+    "无多用户权限模型，author 为自报字段",
+    "大文件未做分块或外部引用，全量寻址"
+  ]
+}

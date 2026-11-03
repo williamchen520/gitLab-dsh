@@ -83,3 +83,11 @@ ARCHITECTURE.json json.load() 通过：tools=17, endpoints=19, mcp.tools=17, api
   且无属性文件，跨机器容易整文件抖动。
 - 复核命令：`validate_arch.py` → `OK`（19/21）；`validate_mcp.py` → `contract=17 server=17 OK`；
   `pytest` 全量 `exit=0`（7 个 Postgres 用例 skip）。
+
+## 11. 新增 `read_file` 工具（同批）
+
+`attach_file` 能把文件挂进快照，HTTP 也能下载，但 MCP 侧没有读回的入口——agent 挂完读不到。
+新增 `read_file(snapshot_id, path, max_bytes=262144)`：UTF-8 能解就回文本，否则回 base64，
+超过 `max_bytes` 截断并置 `truncated`；文件不在快照或 blob 缺失都返回 `ok: false` 与原因。
+工具总数 17 → 18，`layers.shells[mcp].tools`、`mcp.tools`、文档与 README 同步；
+`validate_mcp.py` → `contract=18 server=18`。

@@ -62,7 +62,7 @@
         "path": "server.py",
         "transport": "stdio",
         "host": "DSH",
-        "tools": 17
+        "tools": 18
       },
       {
         "name": "http",
@@ -139,7 +139,8 @@
       { "name": "prepare_chart_regeneration", "effect": "read", "maps_to": "prepare_regeneration（提示词 + 门控）" },
       { "name": "save_protocol_text", "effect": "write", "maps_to": "apply_prose（结构哈希不匹配则拒绝）" },
       { "name": "attach_file", "effect": "write", "maps_to": "FileContentStore.put_file（超阈值转引用）" },
-      { "name": "get_settings", "effect": "read", "maps_to": "SettingsStore.resolve().public()（密钥只回 configured 布尔）" }
+      { "name": "get_settings", "effect": "read", "maps_to": "SettingsStore.resolve().public()（密钥只回 configured 布尔）" },
+      { "name": "read_file", "effect": "read", "maps_to": "read_file(content, snapshot, path)（文本或 base64，可截断）" }
     ]
   },
 

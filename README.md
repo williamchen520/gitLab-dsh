@@ -118,13 +118,33 @@ python scripts/scaffold_from_arch.py --node <codegen.id>
 ## 当前状态
 
 `ARCHITECTURE.json` 已生效（v0.3.0，2026-11-03 经人工「批准修改」），描述的是实际交付的
-[dsh-snapshot](https://github.com/williamchen520/dsh-snapshot) 组件：快照内核 + 10 个 MCP 工具
-+ 11 个 HTTP 端点。
+[williamchen520/dsh-snapshot](https://github.com/williamchen520/dsh-snapshot) 组件：快照内核
++ 10 个 MCP 工具 + 11 个 HTTP 端点。
 
-仍待处理：
+自检工具已补齐：
 
-- **`.dsh_rules` 引用的两个脚本尚缺**：`scripts/run_tests_guarded.py`、`scripts/record_eval_metric.py`，规则 4 的强制退出码依赖它们。
-- **`validate_arch.py` 覆盖不到本组件**：它硬编码 Flask 的 `api_server.app`，而该组件是 FastAPI，校验由组件自己的 `tests/` 承担。
+| 工具 | 作用 |
+|---|---|
+| `scripts/validate_arch.py` | 支持 Flask 与 FastAPI，对着真实应用校验契约 |
+| `scripts/run_tests_guarded.py` | 规则 4：同一目标连续失败两次 → 退出码 2 |
+| `scripts/record_eval_metric.py` | 规则 4：同一指标连续两次未提升 → 退出码 2 |
+
+```bash
+# 校验契约（FastAPI 项目）
+python scripts/validate_arch.py --arch ../contract/ARCHITECTURE.json \
+    --app api:app --root ../app --ignore /
+
+# 带熔断地跑测试
+python scripts/run_tests_guarded.py --cmd "python -m pytest -q"
+
+# 记录指标，连续两次未提升即熔断
+python scripts/record_eval_metric.py --name Recall@10 --value 0.5885
+
+# 自测（无需任何第三方依赖）
+python -m unittest discover -s tests
+```
+
+熔断状态写在 `.guard/`，可随时用 `--reset` 清空。
 
 ## 许可
 

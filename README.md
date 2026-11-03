@@ -25,6 +25,7 @@
 | `AGENTS.md` | 给 AI 代码助手的项目说明书：技术栈、目录、环境变量、代码规范 | 规则 |
 | `docs/开发流程规范.md` | 「架构即代码」的完整操作手册：审批流、`planned` 状态、标准操作 | 规则 |
 | `docs/开发说明.md` | 新项目（实验记录系统）的开发说明：领域模型、快照语义、分层架构、待决项 | 项目 |
+| `docs/架构图.md` | 分层、领域模型、快照流程、存储布局四张图 + 25 个端点清单 | 项目 |
 | `.githooks/` | `pre-commit`、`commit-msg`、`pre-push` 三道物理拦截 | 规则 |
 | `scripts/validate_arch.py` | 校验 Flask 路由与 `ARCHITECTURE.json` 契约是否一致 | 规则 |
 | `scripts/scaffold_from_arch.py` | 依据 JSON 节点生成 Flask 蓝图 / MCP 工具骨架 | 规则 |

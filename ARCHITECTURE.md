@@ -178,18 +178,20 @@ blobs/<sha256 前 2 位>/<剩余 62 位>
 
 ### MCP（`server.py`）
 
-16 个工具，命名与内核方法一一对应：
+17 个工具，命名与内核方法一一对应：
 
 | 工具 | 效果 |
 |---|---|
 | `create_snapshot` · `rollback_snapshot` · `stamp_snapshot` · `delete_snapshot` · `undelete_snapshot` · `save_chart` · `save_protocol_text` · `attach_file` | 写 |
-| `list_snapshots` · `get_snapshot` · `head_snapshot` · `diff_snapshots` · `verify_snapshot` · `render_chart` · `get_chart` · `prepare_chart_regeneration` | 读 |
+| `list_snapshots` · `get_snapshot` · `head_snapshot` · `diff_snapshots` · `verify_snapshot` · `render_chart` · `get_chart` · `prepare_chart_regeneration` · `get_settings` | 读 |
 
 ### HTTP（`api.py`）
 
 | 方法 | 路径 |
 |---|---|
 | `GET` | `/health` |
+| `GET` | `/settings` |
+| `PUT` | `/settings` |
 | `GET` | `/experiments/{id}/snapshots` |
 | `POST` | `/experiments/{id}/snapshots` → `201` |
 | `GET` | `/experiments/{id}/head` |
@@ -247,7 +249,7 @@ ParentNotFound         → 409
 |---|---|---|
 | 单元 + 集成 | 内核、适配器、FastAPI 端点、静态 UI | `pytest -q` |
 | PostgreSQL | 7 条场景，跑在嵌入式实例上 | `python scripts/run_pg_tests.py` |
-| 端到端 | 已装为 DSH 插件，10 个工具在真实 MCP 链路跑通 | 在 DSH 中调用 |
+| 端到端 | 已装为 DSH 插件，17 个工具在真实 MCP 链路跑通 | 在 DSH 中调用 |
 
 PostgreSQL 验证不需要系统安装数据库：`pgserver` 在临时目录启动私有实例，跑完销毁。
 
@@ -257,11 +259,18 @@ PostgreSQL 验证不需要系统安装数据库：`pgserver` 在临时目录启�
 
 | 形态 | 启动 |
 |---|---|
-| DSH 插件 | `plugin_manager install_bundle`，由 `cordis.patch.yml` 以 stdio 拉起 `server.py` |
+| DSH 插件 | 从本地目录（`sourceSpec: E:\dsh-snapshot`）打成 generation 安装；`cordis.patch.yml` 的 `snapshot-settings` 行渲染设置表单，`snapshot-mcp` 行以 stdio 拉起 `server.py` |
 | 独立服务 | `uvicorn api:app --port 8765` |
 | 浏览器 | 打开 `http://127.0.0.1:8765/?experiment=<id>` |
 
 环境变量：`SNAPSHOT_DB`（SQLite 路径）或 `SNAPSHOT_DSN`（PostgreSQL，优先）。
+
+设置是独立的一层：`SNAPSHOT_SETTINGS`（默认 `settings.json`）保存 `protocols_io_token`、
+`tsa_url`、`large_file_threshold`、`blobs_dir` 与 `auth_tokens`；对应的环境变量
+（`PROTOCOLS_IO_ACCESS_TOKEN` / `SNAPSHOT_TSA` / `SNAPSHOT_LARGE_FILE_THRESHOLD` /
+`SNAPSHOT_BLOBS`）优先于文件。DSH 的 `snapshot-settings` 表单行把前两项镜像进该文件；
+`get_settings` 与 `GET /settings` 只回答「配没配」（密钥回 `configured` 布尔），
+`PUT /settings` 写入且不回显，未知键直接拒绝。
 
 ---
 

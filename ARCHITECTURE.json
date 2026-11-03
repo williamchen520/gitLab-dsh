@@ -62,13 +62,13 @@
         "path": "server.py",
         "transport": "stdio",
         "host": "DSH",
-        "tools": 10
+        "tools": 17
       },
       {
         "name": "http",
         "path": "api.py",
         "framework": "FastAPI",
-        "endpoints": 11,
+        "endpoints": 19,
         "serves": "web/"
       }
     ]
@@ -138,7 +138,8 @@
       { "name": "get_chart", "effect": "read", "maps_to": "load_chart + CAS" },
       { "name": "prepare_chart_regeneration", "effect": "read", "maps_to": "prepare_regeneration（提示词 + 门控）" },
       { "name": "save_protocol_text", "effect": "write", "maps_to": "apply_prose（结构哈希不匹配则拒绝）" },
-      { "name": "attach_file", "effect": "write", "maps_to": "FileContentStore.put_file（超阈值转引用）" }
+      { "name": "attach_file", "effect": "write", "maps_to": "FileContentStore.put_file（超阈值转引用）" },
+      { "name": "get_settings", "effect": "read", "maps_to": "SettingsStore.resolve().public()（密钥只回 configured 布尔）" }
     ]
   },
 
@@ -162,7 +163,9 @@
       { "rule": "/experiments/{experiment_id}/charts/{chart_id}", "endpoint": "charts.get", "methods": ["GET"], "status": "implemented" },
       { "rule": "/snapshots/{snapshot_id}/files/{path}", "endpoint": "snapshots.file", "methods": ["GET"], "status": "implemented" },
       { "rule": "/experiments/{experiment_id}/charts/{chart_id}/regeneration", "endpoint": "charts.regeneration", "methods": ["POST"], "status": "implemented" },
-      { "rule": "/experiments/{experiment_id}/protocol", "endpoint": "protocol.save", "methods": ["POST"], "status": "implemented" }
+      { "rule": "/experiments/{experiment_id}/protocol", "endpoint": "protocol.save", "methods": ["POST"], "status": "implemented" },
+      { "rule": "/settings", "endpoint": "settings.get", "methods": ["GET"], "status": "implemented" },
+      { "rule": "/settings", "endpoint": "settings.put", "methods": ["PUT"], "status": "implemented" }
     ]
   },
 

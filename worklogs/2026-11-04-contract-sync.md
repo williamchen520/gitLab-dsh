@@ -58,6 +58,11 @@ ARCHITECTURE.json json.load() 通过：tools=17, endpoints=19, mcp.tools=17, api
 
 ## 8. 未完成项
 
-- `security` 段尚未单列 settings 层（本轮只在 `ARCHITECTURE.md` 说明）；如需机器可读，
-  需另提一次「批准修改」新增节点。
 - DSH 安装产物中的 generation 未重装：`snapshot-settings` 行已在线上生效，重装非必需。
+
+## 9. 追加（同日，第二次「批准修改」）
+
+`security.settings` 已落盘（`env` / `file` / `precedence` / `keys` / `secrets` / `surface`），
+`ARCHITECTURE.md` 增加「### 设置」小节；原第 8 节第 1 条因此关闭。
+`validate_arch` 复核：`framework=fastapi json_routes=19 app_routes=21 / OK`，JSON 合法
+（`security` = auth / timestamps / settings）。

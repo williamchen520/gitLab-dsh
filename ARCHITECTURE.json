@@ -192,6 +192,14 @@
         "stored": "TimeStampToken（已从 TimeStampResp 剥离）",
         "verification": "由依赖方用 openssl ts -verify 完成；插件不验签"
       }
+    },
+    "settings": {
+      "env": "SNAPSHOT_SETTINGS",
+      "file": "settings.json（默认路径，git-ignored，chmod 600 为 best effort）",
+      "precedence": "环境变量优先于文件",
+      "keys": ["protocols_io_token", "tsa_url", "large_file_threshold", "blobs_dir", "auth_tokens"],
+      "secrets": ["protocols_io_token"],
+      "surface": "get_settings 与 GET /settings 只回 configured 布尔；PUT /settings 写入不回显；未知键直接拒绝"
     }
   },
 

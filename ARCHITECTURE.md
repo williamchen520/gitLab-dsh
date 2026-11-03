@@ -292,6 +292,12 @@ token 从外层 `TimeStampResp` 剥离后存储——直接存整包会让 `open
 token 身份覆盖**，请求体里的自报名字不再生效——这是审计字段变成证据的前提。
 token 以 sha256 存储。
 
+### 设置
+
+`SNAPSHOT_SETTINGS` 指向的 JSON 存放凭据与开关，环境变量优先于文件。`protocols_io_token`
+是唯一被折叠成布尔的密钥：`get_settings`、`GET /settings` 只回答「配没配」，
+`PUT /settings` 写入不回显，未知键直接拒绝，文件权限按 600 收紧（Windows 上为 best effort）。
+
 ### 大文件
 
 `SNAPSHOT_LARGE_FILE_THRESHOLD` 以上只存引用。`blob_hash` 仍是内容哈希，快照与

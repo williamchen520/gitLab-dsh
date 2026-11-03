@@ -121,13 +121,16 @@
       { "name": "stamp_snapshot", "effect": "write", "maps_to": "SnapshotService.stamp" },
       { "name": "delete_snapshot", "effect": "write", "maps_to": "SnapshotService.delete" },
       { "name": "undelete_snapshot", "effect": "write", "maps_to": "SnapshotService.undelete" },
-      { "name": "verify_snapshot", "effect": "read", "maps_to": "SnapshotService.verify" }
+      { "name": "verify_snapshot", "effect": "read", "maps_to": "SnapshotService.verify" },
+      { "name": "render_chart", "effect": "read", "maps_to": "ChartDoc.to_mermaid（不落库）" },
+      { "name": "save_chart", "effect": "write", "maps_to": "save_chart_snapshot" },
+      { "name": "get_chart", "effect": "read", "maps_to": "load_chart + CAS" }
     ]
   },
 
   "api": {
     "prefix": "",
-    "note": "validate_arch.py 支持 Flask 与 FastAPI：python scripts/validate_arch.py --arch ARCHITECTURE.json --app api:app --root <repo> --ignore / 可直接校验本组件（/ 为网页首页，不属契约）。",
+    "note": "validate_arch.py 支持 Flask 与 FastAPI：python scripts/validate_arch.py --arch ARCHITECTURE.json --app api:app --root <repo> --ignore / --ignore /chart 可直接校验本组件（/ 与 /chart 是网页，不属数据契约）。",
     "endpoints": [
       { "rule": "/health", "endpoint": "system.health", "methods": ["GET"], "status": "implemented" },
       { "rule": "/experiments/{experiment_id}/snapshots", "endpoint": "snapshots.list", "methods": ["GET"], "status": "implemented" },
@@ -139,14 +142,19 @@
       { "rule": "/snapshots/{snapshot_id}/stamp", "endpoint": "snapshots.stamp", "methods": ["POST"], "status": "implemented" },
       { "rule": "/snapshots/{snapshot_id}/verify", "endpoint": "snapshots.verify", "methods": ["GET"], "status": "implemented" },
       { "rule": "/snapshots/{snapshot_id}", "endpoint": "snapshots.delete", "methods": ["DELETE"], "status": "implemented" },
-      { "rule": "/snapshots/{snapshot_id}/undelete", "endpoint": "snapshots.undelete", "methods": ["POST"], "status": "implemented" }
+      { "rule": "/snapshots/{snapshot_id}/undelete", "endpoint": "snapshots.undelete", "methods": ["POST"], "status": "implemented" },
+      { "rule": "/charts/render", "endpoint": "charts.render", "methods": ["POST"], "status": "implemented" },
+      { "rule": "/experiments/{experiment_id}/charts", "endpoint": "charts.save", "methods": ["POST"], "status": "implemented" },
+      { "rule": "/experiments/{experiment_id}/charts/{chart_id}", "endpoint": "charts.get", "methods": ["GET"], "status": "implemented" },
+      { "rule": "/snapshots/{snapshot_id}/files/{path}", "endpoint": "snapshots.file", "methods": ["GET"], "status": "implemented" }
     ]
   },
 
   "verification": {
-    "unit_and_integration": "tests/ — SQLite 全量 + FastAPI 端点",
+    "unit_and_integration": "tests/ — SQLite 全量 + FastAPI 端点 + 图表格式层 + CAS",
     "postgres": "scripts/run_pg_tests.py（嵌入式 pgserver，7 条场景）",
-    "end_to_end": "已装为 DSH 插件，10 个工具在真实 MCP 链路中跑通"
+    "contract": "scripts/validate_arch.py --app api:app --ignore / --ignore /chart",
+    "end_to_end": "已装为 DSH 插件，MCP 工具在真实链路中跑通"
   },
 
   "known_gaps": [

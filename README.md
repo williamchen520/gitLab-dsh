@@ -29,7 +29,8 @@
 | `.githooks/` | `pre-commit`、`commit-msg`、`pre-push` 三道物理拦截 | 规则 |
 | `scripts/validate_arch.py` | 校验 Flask 路由与 `ARCHITECTURE.json` 契约是否一致 | 规则 |
 | `scripts/scaffold_from_arch.py` | 依据 JSON 节点生成 Flask 蓝图 / MCP 工具骨架 | 规则 |
-| `ARCHITECTURE.md` | 架构总览（当前为 Sci-Pal 版本，需为新项目重写） | 架构 |
+| `ARCHITECTURE.json` | **唯一真理源**：dsh-snapshot 组件的内核、不变量、MCP 工具与 HTTP 端点 | 架构 |
+| `ARCHITECTURE.md` | 架构总览（当前为 Sci-Pal 版本，与上述 JSON 不一致，需重写） | 架构 |
 | `gitLab.py` | 机器学习实验记录（随机森林 + SHAP），作为实验脚本的存放样例 | 样例 |
 
 ## 核心机制：架构即代码
@@ -114,13 +115,17 @@ python scripts/scaffold_from_arch.py --node <codegen.id>
 
 完整规则见 [`.dsh_rules`](.dsh_rules)。
 
-## 待补齐
+## 当前状态
 
-接入新项目时需要一并处理：
+`ARCHITECTURE.json` 已生效（v0.3.0，2026-11-03 经人工「批准修改」），描述的是实际交付的
+[dsh-snapshot](https://github.com/williamchen520/dsh-snapshot) 组件：快照内核 + 10 个 MCP 工具
++ 11 个 HTTP 端点。
 
-- **新建 `ARCHITECTURE.json`**：规则层的 `validate_arch.py` 依赖它，当前骨架中不存在，属预期——它是架构讨论的产物，不该预先提供。
+仍待处理：
+
 - **`.dsh_rules` 引用的两个脚本尚缺**：`scripts/run_tests_guarded.py`、`scripts/record_eval_metric.py`，规则 4 的强制退出码依赖它们。
-- **`ARCHITECTURE.md` 仍是 Sci-Pal 内容**：需随新架构讨论一并重写。
+- **`ARCHITECTURE.md` 仍是 Sci-Pal 内容**：与已生效的 `ARCHITECTURE.json` 不一致，需重写。
+- **`validate_arch.py` 覆盖不到本组件**：它硬编码 Flask 的 `api_server.app`，而该组件是 FastAPI，校验由组件自己的 `tests/` 承担。
 
 ## 许可
 

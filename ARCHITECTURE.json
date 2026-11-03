@@ -3,7 +3,13 @@
     "name": "dsh-snapshot",
     "title": "实验快照",
     "version": "0.3.0",
-    "status": "proposed",
+    "status": "active",
+    "approved": {
+      "by": "human",
+      "on": "2026-11-03",
+      "phrase": "批准修改",
+      "commit_tag": "[APPROVED_BY_HUMAN]"
+    },
     "source_repo": "https://github.com/williamchen520/dsh-snapshot",
     "description": "以实验为单元、整树不可变快照为核心的数据版本系统；内核与传输层分离，MCP 与 HTTP 共用同一内核。",
     "supersedes": "docs/ARCHITECTURE.draft.json"

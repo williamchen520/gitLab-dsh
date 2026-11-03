@@ -172,7 +172,7 @@
   "verification": {
     "unit_and_integration": "tests/ — SQLite 全量 + FastAPI 端点 + 图表格式层 + CAS",
     "postgres": "scripts/run_pg_tests.py（嵌入式 pgserver，7 条场景）",
-    "contract": "scripts/validate_arch.py --app api:app --ignore / --ignore /chart",
+    "contract": "HTTP：scripts/validate_arch.py --app api:app --ignore / --ignore /chart；MCP：scripts/validate_mcp.py",
     "end_to_end": "已装为 DSH 插件，MCP 工具在真实链路中跑通"
   },
 
@@ -195,11 +195,11 @@
     },
     "settings": {
       "env": "SNAPSHOT_SETTINGS",
-      "file": "settings.json（默认路径，git-ignored，chmod 600 为 best effort）",
+      "file": "由 SNAPSHOT_SETTINGS 指定；代码默认 .snapshot-settings.json，本机部署为 E:/dsh-snapshot-data/settings.json（git-ignored，chmod 600 为 best effort）",
       "precedence": "环境变量优先于文件",
-      "keys": ["protocols_io_token", "tsa_url", "large_file_threshold", "blobs_dir", "auth_tokens"],
+      "keys": ["protocols_io_token", "tsa_url", "large_file_threshold", "blobs_dir"],
       "secrets": ["protocols_io_token"],
-      "surface": "get_settings 与 GET /settings 只回 configured 布尔；PUT /settings 写入不回显；未知键直接拒绝"
+      "surface": "get_settings 与 GET /settings：密钥折叠为 configured 布尔，其余字段原样返回；PUT /settings 写入不回显密钥，未知键直接拒绝"
     }
   },
 

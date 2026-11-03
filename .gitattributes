@@ -1,0 +1,2 @@
+# Store LF in the repository; checkouts convert per platform.
+* text=auto eol=lf

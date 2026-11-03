@@ -66,3 +66,20 @@ ARCHITECTURE.json json.load() 通过：tools=17, endpoints=19, mcp.tools=17, api
 `ARCHITECTURE.md` 增加「### 设置」小节；原第 8 节第 1 条因此关闭。
 `validate_arch` 复核：`framework=fastapi json_routes=19 app_routes=21 / OK`，JSON 合法
 （`security` = auth / timestamps / settings）。
+
+## 10. 追加（同日，复查后的「按建议改进」）
+
+- **契约纠错**：`security.settings.file` 原来把默认值写成 `settings.json`，实际代码默认是
+  `.snapshot-settings.json`（本机部署由 cordis 指到 `E:/dsh-snapshot-data/settings.json`）；
+  `keys` 去掉已删除的 `auth_tokens`；`surface` 区分「密钥折叠成布尔」与「其余字段原样返回」。
+- **去重**：§九 与 §十 各有一段「设置」，合并为 §十 一处，部署章只留环境变量一行。
+- **新增机器校验** `scripts/validate_mcp.py`：解析 `server.py` 的 `@mcp.tool()`，与
+  `mcp.tools` 双向比对，并校验 `layers.shells[mcp].tools` 计数；负向验证（临时契约删掉
+  `get_settings`）返回 1 并指名缺失项。`verification.contract` 与验证体系表已登记。
+- **代码侧配套**（`dsh-snapshot` `57af081`）：删除 `auth_tokens` 设置项——它被 `PUT /settings`
+  接受并以明文写进文件、`get_settings` 还报 configured，但注册表只读 `SNAPSHOT_TOKENS`，
+  属于「看起来生效、实际不生效」的死配置；现在写入会以 unknown setting 拒绝。
+- **行尾**：两个仓库新增 `.gitattributes`（`* text=auto eol=lf`），此前 `core.autocrlf=true`
+  且无属性文件，跨机器容易整文件抖动。
+- 复核命令：`validate_arch.py` → `OK`（19/21）；`validate_mcp.py` → `contract=17 server=17 OK`；
+  `pytest` 全量 `exit=0`（7 个 Postgres 用例 skip）。

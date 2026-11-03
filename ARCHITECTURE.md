@@ -250,6 +250,7 @@ ParentNotFound         → 409
 | 单元 + 集成 | 内核、适配器、FastAPI 端点、静态 UI | `pytest -q` |
 | PostgreSQL | 7 条场景，跑在嵌入式实例上 | `python scripts/run_pg_tests.py` |
 | 端到端 | 已装为 DSH 插件，17 个工具在真实 MCP 链路跑通 | 在 DSH 中调用 |
+| MCP 契约 | 工具清单与 `mcp.tools` 一致 | `python scripts/validate_mcp.py` |
 
 PostgreSQL 验证不需要系统安装数据库：`pgserver` 在临时目录启动私有实例，跑完销毁。
 
@@ -264,13 +265,6 @@ PostgreSQL 验证不需要系统安装数据库：`pgserver` 在临时目录启�
 | 浏览器 | 打开 `http://127.0.0.1:8765/?experiment=<id>` |
 
 环境变量：`SNAPSHOT_DB`（SQLite 路径）或 `SNAPSHOT_DSN`（PostgreSQL，优先）。
-
-设置是独立的一层：`SNAPSHOT_SETTINGS`（默认 `settings.json`）保存 `protocols_io_token`、
-`tsa_url`、`large_file_threshold`、`blobs_dir` 与 `auth_tokens`；对应的环境变量
-（`PROTOCOLS_IO_ACCESS_TOKEN` / `SNAPSHOT_TSA` / `SNAPSHOT_LARGE_FILE_THRESHOLD` /
-`SNAPSHOT_BLOBS`）优先于文件。DSH 的 `snapshot-settings` 表单行把前两项镜像进该文件；
-`get_settings` 与 `GET /settings` 只回答「配没配」（密钥回 `configured` 布尔），
-`PUT /settings` 写入且不回显，未知键直接拒绝。
 
 ---
 
@@ -294,9 +288,13 @@ token 以 sha256 存储。
 
 ### 设置
 
-`SNAPSHOT_SETTINGS` 指向的 JSON 存放凭据与开关，环境变量优先于文件。`protocols_io_token`
-是唯一被折叠成布尔的密钥：`get_settings`、`GET /settings` 只回答「配没配」，
-`PUT /settings` 写入不回显，未知键直接拒绝，文件权限按 600 收紧（Windows 上为 best effort）。
+`SNAPSHOT_SETTINGS`（代码默认 `.snapshot-settings.json`，本机部署为
+`E:/dsh-snapshot-data/settings.json`）存 `protocols_io_token`、`tsa_url`、
+`large_file_threshold`、`blobs_dir`；对应环境变量优先于文件。`protocols_io_token`
+是唯一被折叠成布尔的密钥：`get_settings`、`GET /settings` 只对它回答「配没配」，
+其余字段原样返回。`PUT /settings` 写入不回显密钥，未知键直接拒绝；文件 git-ignored，
+权限按 600 收紧（Windows 上为 best effort）。鉴权 token 只走 `SNAPSHOT_TOKENS`，
+不落在这个文件里。
 
 ### 大文件
 

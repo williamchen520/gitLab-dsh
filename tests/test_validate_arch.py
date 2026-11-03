@@ -134,6 +134,17 @@ class ValidateArchTest(unittest.TestCase):
         result = va.validate(arch([]), app, {"/"})
         self.assertTrue(result["ok"], result["errors"])
 
+    def test_fastapi_path_converter_is_canonicalised(self) -> None:
+        """`{path:path}` and `{path}` are the same contract parameter."""
+        app = FakeFastAPIApp(
+            [FakeFastAPIRoute("/files/{path:path}", handler_ok, name="get_file")]
+        )
+        result = va.validate(
+            arch([{"rule": "/files/{path}", "endpoint": "get_file", "methods": ["GET"], "status": "implemented"}]),
+            app,
+        )
+        self.assertTrue(result["ok"], result["errors"])
+
     def test_duplicate_json_endpoint_is_reported(self) -> None:
         app = FakeFastAPIApp([FakeFastAPIRoute("/api/x", handler_ok, name="x")])
         duplicate = {"rule": "/api/x", "endpoint": "x", "methods": ["GET"], "status": "implemented"}

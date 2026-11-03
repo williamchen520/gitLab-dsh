@@ -59,8 +59,19 @@ _PARAM = re.compile(r"<(?:(?P<conv>[^:<>]+):)?(?P<name>[^<>]+)>|\{(?P<fname>[^{}
 
 
 def canonical_rule(rule: str) -> str:
-    """Normalise a route rule so Flask and FastAPI syntax compare equal."""
-    return _PARAM.sub(lambda m: "{" + (m.group("name") or m.group("fname")) + "}", rule)
+    """Normalise a route rule so Flask and FastAPI syntax compare equal.
+
+    ``/x/<int:item_id>``, ``/x/{item_id}`` and ``/x/{item_id:path}`` all
+    canonicalise to ``/x/{item_id}`` — the converter is a delivery detail,
+    the parameter name is the contract.
+    """
+    return _PARAM.sub(lambda m: "{" + _param_name(m) + "}", rule)
+
+
+def _param_name(match: re.Match[str]) -> str:
+    raw = match.group("name") or match.group("fname")
+    # FastAPI writes converters as "{name:path}"; keep only the name.
+    return raw.split(":")[0]
 
 
 def route_key(rule: str, method: str) -> tuple[str, str]:
@@ -72,9 +83,7 @@ def methods_of(endpoint: dict[str, Any]) -> set[str]:
 
 
 def path_params(rule: str) -> set[str]:
-    return {
-        m.group("name") or m.group("fname") for m in _PARAM.finditer(rule)
-    }
+    return {_param_name(m) for m in _PARAM.finditer(rule)}
 
 
 def _accepts(func: Any, name: str) -> bool:

@@ -154,6 +154,24 @@ snapshot_items(snapshot_id, path, blob_hash, size, mime,
 `init_schema()` 幂等：建表、建索引，再比对实际列，缺的用 `ALTER TABLE ADD COLUMN` 补上。
 老版本数据库可直接升级，见 `test_init_schema_upgrades_an_old_database`。
 
+### 内容寻址存储（CAS）
+
+元数据库只存哈希，**字节存在 `blobs/` 里**：
+
+```text
+blobs/<sha256 前 2 位>/<剩余 62 位>
+```
+
+- 同内容只落一份（哈希即路径，重复写入是 no-op）
+- 写入原子：临时文件 + `os.replace`，崩溃不会留下半截 blob
+- `store_files()` 由字节推导哈希与大小，条目不可能和数据对不上
+- `verify()` 重算比对，篡改可发现
+
+**CAS 是协作组件，不是新实体。** 内核仍然只认 `blob_hash`，不知道字节从哪来——
+这也是「图表能被重新打开」的前提：先由快照拿到哈希，再去 CAS 取字节。
+
+配置项 `SNAPSHOT_BLOBS`，默认 `blobs/`。
+
 ---
 
 ## 六、对外接口

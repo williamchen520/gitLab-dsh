@@ -74,7 +74,15 @@
     "metadata_tables": ["snapshots", "snapshot_items"],
     "ordering": "seq（数据库自增），不使用 created_at",
     "dedup": "blob_hash 内容寻址",
-    "migration": "init_schema 幂等，缺列自动 ALTER TABLE ADD COLUMN"
+    "migration": "init_schema 幂等，缺列自动 ALTER TABLE ADD COLUMN",
+    "content_store": {
+      "module": "services/snapshot/content.py",
+      "layout": "blobs/<sha256前2位>/<剩余62位>",
+      "atomic": "临时文件 + os.replace，崩溃不留半截 blob",
+      "dedup": "哈希即路径，重复写入为 no-op",
+      "env": "SNAPSHOT_BLOBS（默认 blobs/）",
+      "note": "内核仍只存哈希；CAS 是协作组件，不是新实体"
+    }
   },
 
   "models": {

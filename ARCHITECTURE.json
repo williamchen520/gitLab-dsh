@@ -86,6 +86,12 @@
       "atomic": "临时文件 + os.replace，崩溃不留半截 blob",
       "dedup": "哈希即路径，重复写入为 no-op",
       "env": "SNAPSHOT_BLOBS（默认 blobs/）",
+      "references": {
+        "env": "SNAPSHOT_LARGE_FILE_THRESHOLD",
+        "behavior": "超过阈值只记录 refs/<sha256>.json（外部路径），不复制字节",
+        "identity": "blob_hash 仍是内容哈希，快照/Diff/打戳不受影响",
+        "integrity": "verify 重读外部文件重新哈希；materialize 可拉回本地"
+      },
       "note": "内核仍只存哈希；CAS 是协作组件，不是新实体"
     }
   },
@@ -131,7 +137,8 @@
       { "name": "save_chart", "effect": "write", "maps_to": "save_chart_snapshot" },
       { "name": "get_chart", "effect": "read", "maps_to": "load_chart + CAS" },
       { "name": "prepare_chart_regeneration", "effect": "read", "maps_to": "prepare_regeneration（提示词 + 门控）" },
-      { "name": "save_protocol_text", "effect": "write", "maps_to": "apply_prose（结构哈希不匹配则拒绝）" }
+      { "name": "save_protocol_text", "effect": "write", "maps_to": "apply_prose（结构哈希不匹配则拒绝）" },
+      { "name": "attach_file", "effect": "write", "maps_to": "FileContentStore.put_file（超阈值转引用）" }
     ]
   },
 
@@ -166,9 +173,28 @@
     "end_to_end": "已装为 DSH 插件，MCP 工具在真实链路中跑通"
   },
 
+  "security": {
+    "auth": {
+      "env": "SNAPSHOT_TOKENS",
+      "roles": ["viewer", "editor", "admin"],
+      "storage": "token 以 sha256 存储",
+      "default": "未配置时开放（本地单用户）",
+      "rule": "认证后 author 由 token 身份覆盖，不采信请求体"
+    },
+    "timestamps": {
+      "local": "sha256 摘要，离线",
+      "rfc3161": {
+        "env": "SNAPSHOT_TSA",
+        "request": "手工 DER 编码 TimeStampReq",
+        "stored": "TimeStampToken（已从 TimeStampResp 剥离）",
+        "verification": "由依赖方用 openssl ts -verify 完成；插件不验签"
+      }
+    }
+  },
+
   "known_gaps": [
-    "时间戳仅本地摘要，未接 RFC 3161 外部时间源",
-    "无多用户权限模型，author 为自报字段",
-    "大文件未做分块或外部引用，全量寻址"
+    "RFC 3161 token 的签名校验交给依赖方（openssl），插件本身不验签",
+    "鉴权 token 只能由环境变量配置，没有账户体系与轮换机制",
+    "引用模式把可复现性部分押在外部文件上：失效可检测，但不能阻止"
   ]
 }

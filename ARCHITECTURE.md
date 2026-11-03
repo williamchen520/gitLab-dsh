@@ -178,11 +178,11 @@ blobs/<sha256 前 2 位>/<剩余 62 位>
 
 ### MCP（`server.py`）
 
-15 个工具，命名与内核方法一一对应：
+16 个工具，命名与内核方法一一对应：
 
 | 工具 | 效果 |
 |---|---|
-| `create_snapshot` · `rollback_snapshot` · `stamp_snapshot` · `delete_snapshot` · `undelete_snapshot` · `save_chart` · `save_protocol_text` | 写 |
+| `create_snapshot` · `rollback_snapshot` · `stamp_snapshot` · `delete_snapshot` · `undelete_snapshot` · `save_chart` · `save_protocol_text` · `attach_file` | 写 |
 | `list_snapshots` · `get_snapshot` · `head_snapshot` · `diff_snapshots` · `verify_snapshot` · `render_chart` · `get_chart` · `prepare_chart_regeneration` | 读 |
 
 ### HTTP（`api.py`）
@@ -265,17 +265,40 @@ PostgreSQL 验证不需要系统安装数据库：`pgserver` 在临时目录启�
 
 ---
 
-## 十、已知缺口
+## 十、安全与合规能力
 
-| 缺口 | 影响 | 方向 |
-|---|---|---|
-| 时间戳仅本地摘要 | 无法证明「某时刻已存在」 | 接 RFC 3161 TSA，`Stamp.kind` 已预留 |
-| 无权限模型 | `author` 可自报，审计可伪造 | 引入身份后由外壳填充 |
-| 大文件全量寻址 | 单文件巨大时占用高 | 分块或外部引用，阈值当前关闭 |
+### 时间戳
+
+| 层级 | 能力 |
+|---|---|
+| 本地戳 | sha256 摘要，离线可用，**只证明「未被改动」** |
+| RFC 3161 | `SNAPSHOT_TSA` 指向权威，手工 DER 编码请求，保存 TimeStampToken |
+
+token 从外层 `TimeStampResp` 剥离后存储——直接存整包会让 `openssl ts -verify -token_in`
+报 wrong tag。**验签由依赖方完成**，插件不冒充验证者。
+
+### 鉴权
+
+`SNAPSHOT_TOKENS` 启用后：`viewer` 只读，`editor` 可写。**认证通过后 `author` 由
+token 身份覆盖**，请求体里的自报名字不再生效——这是审计字段变成证据的前提。
+token 以 sha256 存储。
+
+### 大文件
+
+`SNAPSHOT_LARGE_FILE_THRESHOLD` 以上只存引用。`blob_hash` 仍是内容哈希，快照与
+Diff 不受影响；`verify` 重读外部文件校验，`materialize` 可拉回本地。
+
+## 十一、已知限制
+
+| 限制 | 影响 |
+|---|---|
+| 插件不验 TSA 签名 | 需依赖方执行 `openssl ts -verify` |
+| token 仅环境变量配置 | 无账户体系与轮换 |
+| 引用模式依赖外部文件 | 失效可检测，不可阻止 |
 
 ---
 
-## 十一、文档索引
+## 十二、文档索引
 
 | 文档 | 内容 |
 |---|---|

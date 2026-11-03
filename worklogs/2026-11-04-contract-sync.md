@@ -91,3 +91,15 @@ ARCHITECTURE.json json.load() 通过：tools=17, endpoints=19, mcp.tools=17, api
 超过 `max_bytes` 截断并置 `truncated`；文件不在快照或 blob 缺失都返回 `ok: false` 与原因。
 工具总数 17 → 18，`layers.shells[mcp].tools`、`mcp.tools`、文档与 README 同步；
 `validate_mcp.py` → `contract=18 server=18`。
+
+## 12. 性能与回收（同批）
+
+- **SQLite 写锁等待**：只开 WAL 不够，第二个写者会立刻 `database is locked`；
+  适配器加 `PRAGMA busy_timeout=5000`，`tests/test_storage.py` 断言该值。
+- **大文件流式**：`put_file` / `materialize` 以 1 MiB 分块写入临时文件再原子改名；
+  HTTP 下载对已落盘的 blob 走 `FileResponse`，只有引用模式退回内存读取。
+- **blob 回收**：存储层新增 `referenced_blobs(include_deleted=True)`，内容层新增
+  `prune(referenced, dry_run=True)`，MCP 新增 `prune_blobs`。默认 dry-run、默认保留
+  软删除快照引用的字节，所以 `undelete` 不会丢文件；工具总数 18 → 19。
+- 校验：`validate_mcp.py` → `contract=19 server=19`；`validate_arch.py` → `OK`；
+  `pytest` 全量 `exit=0`（7 个 Postgres 用例 skip）。

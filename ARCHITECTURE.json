@@ -62,7 +62,7 @@
         "path": "server.py",
         "transport": "stdio",
         "host": "DSH",
-        "tools": 18
+        "tools": 19
       },
       {
         "name": "http",
@@ -140,7 +140,8 @@
       { "name": "save_protocol_text", "effect": "write", "maps_to": "apply_prose（结构哈希不匹配则拒绝）" },
       { "name": "attach_file", "effect": "write", "maps_to": "FileContentStore.put_file（超阈值转引用）" },
       { "name": "get_settings", "effect": "read", "maps_to": "SettingsStore.resolve().public()（密钥只回 configured 布尔）" },
-      { "name": "read_file", "effect": "read", "maps_to": "read_file(content, snapshot, path)（文本或 base64，可截断）" }
+      { "name": "read_file", "effect": "read", "maps_to": "read_file(content, snapshot, path)（文本或 base64，可截断）" },
+      { "name": "prune_blobs", "effect": "write", "maps_to": "content.prune(referenced, dry_run)（默认 dry-run）" }
     ]
   },
 

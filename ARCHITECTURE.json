@@ -4,6 +4,11 @@
     "title": "实验快照",
     "version": "0.3.0",
     "status": "active",
+    "governance": {
+      "rule_0": "修改本文件须人工批准，提交信息带 [APPROVED_BY_HUMAN]",
+      "standing_exception": "纯新增（已实现且测试通过的工具或端点，不改不变量、不改已有语义）可随功能同批提交，无需逐次报批；删改、重命名、语义变更仍须事先批准",
+      "granted": "2026-11-03"
+    },
     "approved": {
       "by": "human",
       "on": "2026-11-03",
@@ -124,7 +129,9 @@
       { "name": "verify_snapshot", "effect": "read", "maps_to": "SnapshotService.verify" },
       { "name": "render_chart", "effect": "read", "maps_to": "ChartDoc.to_mermaid（不落库）" },
       { "name": "save_chart", "effect": "write", "maps_to": "save_chart_snapshot" },
-      { "name": "get_chart", "effect": "read", "maps_to": "load_chart + CAS" }
+      { "name": "get_chart", "effect": "read", "maps_to": "load_chart + CAS" },
+      { "name": "prepare_chart_regeneration", "effect": "read", "maps_to": "prepare_regeneration（提示词 + 门控）" },
+      { "name": "save_protocol_text", "effect": "write", "maps_to": "apply_prose（结构哈希不匹配则拒绝）" }
     ]
   },
 
@@ -146,7 +153,9 @@
       { "rule": "/charts/render", "endpoint": "charts.render", "methods": ["POST"], "status": "implemented" },
       { "rule": "/experiments/{experiment_id}/charts", "endpoint": "charts.save", "methods": ["POST"], "status": "implemented" },
       { "rule": "/experiments/{experiment_id}/charts/{chart_id}", "endpoint": "charts.get", "methods": ["GET"], "status": "implemented" },
-      { "rule": "/snapshots/{snapshot_id}/files/{path}", "endpoint": "snapshots.file", "methods": ["GET"], "status": "implemented" }
+      { "rule": "/snapshots/{snapshot_id}/files/{path}", "endpoint": "snapshots.file", "methods": ["GET"], "status": "implemented" },
+      { "rule": "/experiments/{experiment_id}/charts/{chart_id}/regeneration", "endpoint": "charts.regeneration", "methods": ["POST"], "status": "implemented" },
+      { "rule": "/experiments/{experiment_id}/protocol", "endpoint": "protocol.save", "methods": ["POST"], "status": "implemented" }
     ]
   },
 

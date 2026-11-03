@@ -178,12 +178,12 @@ blobs/<sha256 前 2 位>/<剩余 62 位>
 
 ### MCP（`server.py`）
 
-13 个工具，命名与内核方法一一对应：
+15 个工具，命名与内核方法一一对应：
 
 | 工具 | 效果 |
 |---|---|
-| `create_snapshot` · `rollback_snapshot` · `stamp_snapshot` · `delete_snapshot` · `undelete_snapshot` · `save_chart` | 写 |
-| `list_snapshots` · `get_snapshot` · `head_snapshot` · `diff_snapshots` · `verify_snapshot` · `render_chart` · `get_chart` | 读 |
+| `create_snapshot` · `rollback_snapshot` · `stamp_snapshot` · `delete_snapshot` · `undelete_snapshot` · `save_chart` · `save_protocol_text` | 写 |
+| `list_snapshots` · `get_snapshot` · `head_snapshot` · `diff_snapshots` · `verify_snapshot` · `render_chart` · `get_chart` · `prepare_chart_regeneration` | 读 |
 
 ### HTTP（`api.py`）
 
@@ -204,6 +204,8 @@ blobs/<sha256 前 2 位>/<剩余 62 位>
 | `POST` | `/experiments/{id}/charts` → `201` |
 | `GET` | `/experiments/{id}/charts/{chart_id}` |
 | `GET` | `/snapshots/{id}/files/{path}` |
+| `POST` | `/experiments/{id}/charts/{chart_id}/regeneration` |
+| `POST` | `/experiments/{id}/protocol` |
 
 > `/` 与 `/chart` 是网页入口，不属于数据契约，校验时用 `--ignore` 排除。
 

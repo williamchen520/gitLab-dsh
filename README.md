@@ -1,27 +1,34 @@
 # gitLab-dsh
 
-> Sci-Pal 的「架构即代码」协作骨架：把 API 契约、开发流程与人工审批红线，从口头约定固化成仓库里的文件、脚本和 Git 钩子。
+> 一套可复用的「架构即代码」协作骨架：把 API 契约、开发流程与人工审批红线，从口头约定固化成仓库里的文件、脚本和 Git 钩子。
 
 ---
 
 ## 仓库定位
 
-本仓库**不包含 Sci-Pal 的业务代码**，它承载的是项目的治理层：一份架构总览、一套 AI/人类协作规则、两个校验/脚手架脚本，以及三个物理拦截钩子。
+本仓库是 Sci-Pal 项目沉淀下来的**规范与脚手架骨架**，用作后续新项目的开发底座。
 
-目标是让「先改契约、再改代码」这件事无法被绕过——不是靠提醒，而是靠 `pre-commit` 和 `commit-msg` 让违规提交直接失败。
+它分成两层，复用程度不同：
+
+| 层 | 内容 | 新项目如何处理 |
+|---|---|---|
+| **规则层** | `.dsh_rules`、`AGENTS.md`、`docs/开发流程规范.md`、`.githooks/`、`scripts/` | **直接继承**，规则本身不随项目变化 |
+| **架构层** | `ARCHITECTURE.json`、`ARCHITECTURE.md` | **清空重写**，必须针对新项目重新讨论、细化后成文 |
+
+也就是说：流程不用再发明，但架构不能照抄。`ARCHITECTURE.md` 里现有的检索链路、模块清单、评测指标都是 Sci-Pal 的，新项目要连同一份新的 `ARCHITECTURE.json` 一起重新设计。
 
 ## 目录结构
 
-| 路径 | 作用 |
-|---|---|
-| `.dsh_rules` | 最高优先级协作规则（规则 0–7），任何 AI 动手前必须先加载 |
-| `AGENTS.md` | 给 AI 代码助手的项目说明书：技术栈、目录、环境变量、代码规范 |
-| `ARCHITECTURE.md` | 架构总览，含各版本的模块清单、检索/生成/评测链路细节 |
-| `docs/开发流程规范.md` | 「架构即代码」的完整操作手册：审批流、`planned` 状态、标准操作 |
-| `scripts/validate_arch.py` | 校验 Flask 路由与 `ARCHITECTURE.json` 契约是否一致 |
-| `scripts/scaffold_from_arch.py` | 依据 JSON 节点生成 Flask 蓝图 / MCP 工具骨架 |
-| `.githooks/` | `pre-commit`、`commit-msg`、`pre-push` 三道物理拦截 |
-| `gitLab.py` | 独立的机器学习实验脚本（随机森林 + SHAP），与本骨架无关 |
+| 路径 | 作用 | 层 |
+|---|---|---|
+| `.dsh_rules` | 最高优先级协作规则（规则 0–7），任何 AI 动手前必须先加载 | 规则 |
+| `AGENTS.md` | 给 AI 代码助手的项目说明书：技术栈、目录、环境变量、代码规范 | 规则 |
+| `docs/开发流程规范.md` | 「架构即代码」的完整操作手册：审批流、`planned` 状态、标准操作 | 规则 |
+| `.githooks/` | `pre-commit`、`commit-msg`、`pre-push` 三道物理拦截 | 规则 |
+| `scripts/validate_arch.py` | 校验 Flask 路由与 `ARCHITECTURE.json` 契约是否一致 | 规则 |
+| `scripts/scaffold_from_arch.py` | 依据 JSON 节点生成 Flask 蓝图 / MCP 工具骨架 | 规则 |
+| `ARCHITECTURE.md` | 架构总览（当前为 Sci-Pal 版本，需为新项目重写） | 架构 |
+| `gitLab.py` | 机器学习实验记录（随机森林 + SHAP），作为实验脚本的存放样例 | 样例 |
 
 ## 核心机制：架构即代码
 
@@ -50,6 +57,14 @@ implemented    # 严格校验：路由、方法、参数必须与 JSON 完全一
 ### 冲突处理原则
 
 测试失败若源于代码与 JSON 契约不一致，**只允许改 Python 去适配 JSON**，禁止为了让测试变绿而反向修改 JSON 参数。
+
+## 新项目接入流程
+
+1. **讨论架构**：确定项目目标、边界、技术栈、路由清单、数据模型与模块划分。
+2. **写 `ARCHITECTURE.json`**：按讨论结果填充 `api.endpoints`，未实现的节点标 `status: "planned"`。
+3. **重写 `ARCHITECTURE.md`**：用新项目的模块清单和链路替换 Sci-Pal 的内容。
+4. **更新 `AGENTS.md`**：技术栈、目录结构、环境变量改成新项目的。
+5. **跑校验**：`python scripts/validate_arch.py` 通过后，才允许写路由与业务逻辑。
 
 ## 快速开始
 
@@ -97,11 +112,13 @@ python scripts/scaffold_from_arch.py --node <codegen.id>
 
 完整规则见 [`.dsh_rules`](.dsh_rules)。
 
-## 已知缺口
+## 待补齐
 
-- **`ARCHITECTURE.json` 未纳入本仓库**：所有文档都称其为唯一真理源，但仓库中并不存在该文件，`validate_arch.py` 需要它才能运行。若它属于私有资产，请在克隆后自行放入根目录。
-- `.dsh_rules` 中提到的 `scripts/run_tests_guarded.py`、`scripts/record_eval_metric.py` 尚未提供。
-- `gitLab.py` 是一份独立的研究实验脚本（依赖 `pandas` / `scikit-learn` / `rdkit` / `shap`），与治理骨架没有依赖关系，保留在此仅作实验记录。
+接入新项目时需要一并处理：
+
+- **新建 `ARCHITECTURE.json`**：规则层的 `validate_arch.py` 依赖它，当前骨架中不存在，属预期——它是架构讨论的产物，不该预先提供。
+- **`.dsh_rules` 引用的两个脚本尚缺**：`scripts/run_tests_guarded.py`、`scripts/record_eval_metric.py`，规则 4 的强制退出码依赖它们。
+- **`ARCHITECTURE.md` 仍是 Sci-Pal 内容**：需随新架构讨论一并重写。
 
 ## 许可
 

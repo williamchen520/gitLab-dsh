@@ -103,3 +103,21 @@ ARCHITECTURE.json json.load() 通过：tools=17, endpoints=19, mcp.tools=17, api
   软删除快照引用的字节，所以 `undelete` 不会丢文件；工具总数 18 → 19。
 - 校验：`validate_mcp.py` → `contract=19 server=19`；`validate_arch.py` → `OK`；
   `pytest` 全量 `exit=0`（7 个 Postgres 用例 skip）。
+
+## 13. 新增 judgement（P1：确定性判分，append-only）
+
+按 scipal 设计的第一步，把"判分"做成挂在不可变快照上的附加事实，而不是内核状态：
+
+- 新模块 `services/snapshot/judgement.py`：`judgement` 只追加；判定记录
+  `snapshot_tree_hash` 与 `criteria_hash`，同条件重复提交复用已有 verdict；
+  `force` 生成带 `parent_judgement_id` 的新行，旧行不改。
+- 判定范围（本阶段）：`exists` / `nonempty` / `mime` 三种确定性检查；
+  没有检查项时 verdict 为 `error`（空 checklist 绝不等于通过）；未知检查类型直接 400。
+- 存储：新表 `judgements`（SQLite INTEGER 自增 / PostgreSQL IDENTITY），
+  `(snapshot_id, criteria_hash)` 普通索引用于幂等查询；`init_schema` 幂等建表。
+- 外壳：HTTP `POST/GET /snapshots/{id}/judgements`（201 / 200），MCP
+  `judge_snapshot` / `list_judgements`；工具总数 19 → 21，端点 19 → 21。
+- 明确未做：LLM 判分、claim/evidence 写入、models/invariants 的契约变更
+  （后者仍需单独批准）。
+- 校验：`validate_arch.py` → `json_routes=21 app_routes=23 OK`；
+  `validate_mcp.py` → `contract=21 server=21`；`pytest` 全量 `exit=0`（12 条 judgement 用例）。

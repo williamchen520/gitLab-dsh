@@ -178,12 +178,12 @@ blobs/<sha256 前 2 位>/<剩余 62 位>
 
 ### MCP（`server.py`）
 
-19 个工具，命名与内核方法一一对应：
+21 个工具，命名与内核方法一一对应：
 
 | 工具 | 效果 |
 |---|---|
-| `create_snapshot` · `rollback_snapshot` · `stamp_snapshot` · `delete_snapshot` · `undelete_snapshot` · `save_chart` · `save_protocol_text` · `attach_file` · `prune_blobs` | 写 |
-| `list_snapshots` · `get_snapshot` · `head_snapshot` · `diff_snapshots` · `verify_snapshot` · `render_chart` · `get_chart` · `prepare_chart_regeneration` · `get_settings` · `read_file` | 读 |
+| `create_snapshot` · `rollback_snapshot` · `stamp_snapshot` · `delete_snapshot` · `undelete_snapshot` · `save_chart` · `save_protocol_text` · `attach_file` · `prune_blobs` · `judge_snapshot` | 写 |
+| `list_snapshots` · `get_snapshot` · `head_snapshot` · `diff_snapshots` · `verify_snapshot` · `render_chart` · `get_chart` · `prepare_chart_regeneration` · `get_settings` · `read_file` · `list_judgements` | 读 |
 
 ### HTTP（`api.py`）
 
@@ -208,6 +208,8 @@ blobs/<sha256 前 2 位>/<剩余 62 位>
 | `GET` | `/snapshots/{id}/files/{path}` |
 | `POST` | `/experiments/{id}/charts/{chart_id}/regeneration` |
 | `POST` | `/experiments/{id}/protocol` |
+| `POST` | `/snapshots/{id}/judgements` → `201` |
+| `GET` | `/snapshots/{id}/judgements` |
 
 > `/` 与 `/chart` 是网页入口，不属于数据契约，校验时用 `--ignore` 排除。
 
@@ -249,7 +251,7 @@ ParentNotFound         → 409
 |---|---|---|
 | 单元 + 集成 | 内核、适配器、FastAPI 端点、静态 UI | `pytest -q` |
 | PostgreSQL | 7 条场景，跑在嵌入式实例上 | `python scripts/run_pg_tests.py` |
-| 端到端 | 已装为 DSH 插件，19 个工具在真实 MCP 链路跑通 | 在 DSH 中调用 |
+| 端到端 | 已装为 DSH 插件，21 个工具在真实 MCP 链路跑通 | 在 DSH 中调用 |
 | MCP 契约 | 工具清单与 `mcp.tools` 一致 | `python scripts/validate_mcp.py` |
 
 PostgreSQL 验证不需要系统安装数据库：`pgserver` 在临时目录启动私有实例，跑完销毁。

@@ -1,0 +1,31 @@
+{
+  "plan_id": "2026-11-05-judgement-p1",
+  "items": [
+    {
+      "id": "P1",
+      "contract": {
+        "rule": "/snapshots/{snapshot_id}/judgements",
+        "endpoint": "judgements.create",
+        "methods": ["POST"]
+      },
+      "test": "tests/test_judgement.py::test_http_endpoints_record_and_list",
+      "status": "implemented"
+    },
+    {
+      "id": "P2",
+      "contract": {
+        "rule": "/snapshots/{snapshot_id}/judgements",
+        "endpoint": "judgements.list",
+        "methods": ["GET"]
+      },
+      "test": "tests/test_judgement.py::test_http_endpoints_record_and_list",
+      "status": "implemented"
+    },
+    {
+      "id": "P3",
+      "contract": null,
+      "test": "tests/test_judgement.py::test_same_criteria_reuses_the_verdict",
+      "status": "implemented"
+    }
+  ]
+}

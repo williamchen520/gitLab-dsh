@@ -20,20 +20,49 @@
     "supersedes": "docs/ARCHITECTURE.draft.json"
   },
 
-  "decisions": {
-    "D-1": {
-      "choice": "B",
-      "summary": "派生子实验：derived_from 指针落在实验实体上，不设 branch 表"
+  "decisions": [
+    {
+      "id": "D-1",
+      "date": "2026-11-03",
+      "status": "accepted",
+      "owner": "human",
+      "summary": "派生子实验：derived_from 指针落在实验实体上，不设 branch 表",
+      "options": ["A 轻分支（branch 表 + 指针）", "B 派生子实验（derived_from 指针）"],
+      "chosen": "B",
+      "rejected_because": {
+        "A": "两条线共享标题/假设/参数，对照组场景别扭；导出需选分支；UI 需分支切换器"
+      },
+      "impact": ["experiment 增加 derived_from_snapshot_id", "不设 branch 表", "派生零拷贝同一批 CAS 对象"]
     },
-    "D-2": {
-      "choice": "A",
-      "summary": "全量内容寻址，未变对象靠哈希复用；引用模式阈值默认关闭"
+    {
+      "id": "D-2",
+      "date": "2026-11-03",
+      "status": "accepted",
+      "owner": "human",
+      "summary": "全量内容寻址，未变对象靠哈希复用；引用模式阈值默认关闭",
+      "options": ["A 全量寻址（硬链接去重）", "B 256MB 阈值引用", "C 1GB 阈值引用"],
+      "chosen": "A",
+      "rejected_because": {
+        "B": "引用失效是静默的完整性破坏；需失效校验与就地固化，复杂度从存储层转给用户",
+        "C": "触发更少但一旦失效影响面更大，没有解决根本问题"
+      },
+      "impact": ["所有条目都是可校验的内容哈希", "阈值保留为配置项，默认关闭"]
     },
-    "D-6": {
-      "choice": "A",
-      "summary": "整实验快照：一次提交固化实验下全部内容"
+    {
+      "id": "D-6",
+      "date": "2026-11-03",
+      "status": "accepted",
+      "owner": "human",
+      "summary": "整实验快照：一次提交固化实验下全部内容",
+      "options": ["A 整实验快照", "B 单对象快照", "C 两级（快照 + 对象版本链）"],
+      "chosen": "A",
+      "rejected_because": {
+        "B": "快照数量爆炸，DAG 退化为长链，丢失整体状态语义",
+        "C": "实现复杂度翻倍，M1 阶段不值得"
+      },
+      "impact": ["快照为全量树", "未变文件零成本复用", "回滚是整树追加"]
     }
-  },
+  ],
 
   "invariants": [
     "快照创建后，内容、父指针、树哈希均不可修改",

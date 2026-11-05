@@ -55,6 +55,23 @@ def digest(arch: dict) -> str:
         lines += [f"{index}. {item}" for index, item in enumerate(invariants, 1)]
         lines.append("")
 
+    decisions = arch.get("decisions", [])
+    if decisions:
+        lines += ["### 关键决策", "", "| id | 决定 | 选择 | 否决理由 |", "|---|---|---|---|"]
+        entries = decisions.items() if isinstance(decisions, dict) else [
+            (item.get("id"), item) for item in decisions
+        ]
+        for key, item in entries:
+            rejected = "; ".join(
+                f"{option}: {reason}"
+                for option, reason in (item.get("rejected_because") or {}).items()
+            )
+            lines.append(
+                f"| {_cell(key)} | {_cell(item.get('summary'))} | "
+                f"{_cell(item.get('chosen'))} | {_cell(rejected)} |"
+            )
+        lines.append("")
+
     layers = arch.get("layers", {})
     kernel = layers.get("kernel", {})
     shells = layers.get("shells", [])

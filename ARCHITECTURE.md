@@ -327,3 +327,102 @@ Diff 不受影响；`verify` 重读外部文件校验，`materialize` 可拉回�
 ---
 
 *本文随 `ARCHITECTURE.json` 同步维护。修改架构时先改 JSON 并走审批，再更新本文。*
+
+<!-- BEGIN GENERATED: contract-digest -->
+## 附录 A：契约速查（自动生成，勿手改）
+
+> 由 `scripts/render_arch_md.py` 从 `ARCHITECTURE.json` 生成；`--check` 校验是否同步。手改本块会在下次渲染时被覆盖。
+
+**dsh-snapshot v0.3.0** — 以实验为单元、整树不可变快照为核心的数据版本系统；内核与传输层分离，MCP 与 HTTP 共用同一内核。
+
+### 不变量
+
+1. 快照创建后，内容、父指针、树哈希均不可修改
+2. 回滚是追加新快照，历史永不改写
+3. 内核不得导入任何传输协议（mcp / fastapi / flask / starlette / uvicorn）
+4. 条目顺序为码点序，由内核统一，不交给数据库排序
+5. 软删除只改可见性，行与内容保留
+6. 戳一旦写入不重算，除非显式要求
+
+### 分层
+
+- **内核** `services/snapshot`（transport-free）
+  - models.py — Snapshot / SnapshotItem / Stamp / 树哈希 / 戳摘要
+  - diff.py — 纯函数树对比
+  - ports.py — SnapshotStorage 协议
+  - service.py — SnapshotService 业务编排
+  - adapters/ — sql_base / sqlite / postgres
+- **mcp** `server.py`：21 tools
+- **http** `api.py`：21 endpoints
+
+### MCP 工具（21）
+
+| 工具 | 效果 | 映射 |
+|---|---|---|
+| `create_snapshot` | write | SnapshotService.create |
+| `list_snapshots` | read | SnapshotService.list |
+| `get_snapshot` | read | SnapshotService.get |
+| `head_snapshot` | read | SnapshotService.head |
+| `diff_snapshots` | read | SnapshotService.diff |
+| `rollback_snapshot` | write | SnapshotService.rollback |
+| `stamp_snapshot` | write | SnapshotService.stamp |
+| `delete_snapshot` | write | SnapshotService.delete |
+| `undelete_snapshot` | write | SnapshotService.undelete |
+| `verify_snapshot` | read | SnapshotService.verify |
+| `render_chart` | read | ChartDoc.to_mermaid（不落库） |
+| `save_chart` | write | save_chart_snapshot |
+| `get_chart` | read | load_chart + CAS |
+| `prepare_chart_regeneration` | read | prepare_regeneration（提示词 + 门控） |
+| `save_protocol_text` | write | apply_prose（结构哈希不匹配则拒绝） |
+| `attach_file` | write | FileContentStore.put_file（超阈值转引用） |
+| `get_settings` | read | SettingsStore.resolve().public()（密钥只回 configured 布尔） |
+| `read_file` | read | read_file(content, snapshot, path)（文本或 base64，可截断） |
+| `prune_blobs` | write | content.prune(referenced, dry_run)（默认 dry-run） |
+| `judge_snapshot` | write | JudgementService.judge（确定性检查，append-only） |
+| `list_judgements` | read | JudgementService.list |
+
+### HTTP 端点（21）
+
+| 方法 | 路径 | endpoint | 状态 |
+|---|---|---|---|
+| GET | `/health` | system.health | implemented |
+| GET | `/experiments/{experiment_id}/snapshots` | snapshots.list | implemented |
+| POST | `/experiments/{experiment_id}/snapshots` | snapshots.create | implemented |
+| GET | `/experiments/{experiment_id}/head` | snapshots.head | implemented |
+| GET | `/snapshots/{snapshot_id}` | snapshots.get | implemented |
+| GET | `/snapshots/{left_id}/diff/{right_id}` | snapshots.diff | implemented |
+| POST | `/experiments/{experiment_id}/rollback/{target_id}` | snapshots.rollback | implemented |
+| POST | `/snapshots/{snapshot_id}/stamp` | snapshots.stamp | implemented |
+| GET | `/snapshots/{snapshot_id}/verify` | snapshots.verify | implemented |
+| DELETE | `/snapshots/{snapshot_id}` | snapshots.delete | implemented |
+| POST | `/snapshots/{snapshot_id}/undelete` | snapshots.undelete | implemented |
+| POST | `/charts/render` | charts.render | implemented |
+| POST | `/experiments/{experiment_id}/charts` | charts.save | implemented |
+| GET | `/experiments/{experiment_id}/charts/{chart_id}` | charts.get | implemented |
+| GET | `/snapshots/{snapshot_id}/files/{path}` | snapshots.file | implemented |
+| POST | `/experiments/{experiment_id}/charts/{chart_id}/regeneration` | charts.regeneration | implemented |
+| POST | `/experiments/{experiment_id}/protocol` | protocol.save | implemented |
+| GET | `/settings` | settings.get | implemented |
+| PUT | `/settings` | settings.put | implemented |
+| POST | `/snapshots/{snapshot_id}/judgements` | judgements.create | implemented |
+| GET | `/snapshots/{snapshot_id}/judgements` | judgements.list | implemented |
+
+### 模型
+
+- **snapshot**：`id`、`experiment_id`、`parent_id`、`tree_hash`、`message`、`author`、`created_at`、`action`、`audit`、`stamp`、`deleted_at`、`deleted_by`
+- **item**：`path`、`blob_hash`、`size`、`mime`
+
+### 存储
+
+- 适配器：sqlite、postgres
+- 表：snapshots、snapshot_items、judgements
+- 排序：seq（数据库自增），不使用 created_at
+
+### 验证
+
+- `unit_and_integration`：tests/ — SQLite 全量 + FastAPI 端点 + 图表格式层 + CAS
+- `postgres`：scripts/run_pg_tests.py（嵌入式 pgserver，7 条场景）
+- `contract`：HTTP：scripts/validate_arch.py --app api:app --ignore / --ignore /chart；MCP：scripts/validate_mcp.py
+- `end_to_end`：已装为 DSH 插件，MCP 工具在真实链路中跑通
+
+<!-- END GENERATED: contract-digest -->
